@@ -1,0 +1,17 @@
+I'm creating a new skill. The skill will use an MCP server https://proxy.mhaas-dev.mobalab.net/mcp , and it requires an API key to be sent as a bearer token in the "Authorization" header. It has 4 different categories of tools. The 4 categories are filesystem, AWS API, Zoho Mail, and Tally.
+
+The skill will:
+1. fetch the recent (default 5 days, but configurable) submissions to the form 5Bd9jQ from the Tally tool to /shared/recent-submissions.json
+2. fetch the CSV containing all the submissions until the last skill run from s3://mhaas-demo/all-submissions.csv to /shared/all-submissions.csv. If it doesn't exist, treat that as empty
+3. Compare the files from the steps 1 and 2, and if there are new submissions in recent-submissions.json, convert the new entries to CSV, and append them to the all-submissions.csv. If no new entries, stop successfully with a message "no new entries", and no subsequent steps should be run
+4. fetch s3://mhaas-demo/mail-template.txt using the AWS API tool
+5. for each new entry, do the following:
+  5-i. Replace [Last Name] and [First Name] with the values in the entry
+  5-ii. Send an email to the email address via the Zoho tool. The 1st line is the subject, and the rest is the body.
+
+The skill needs to be portable: Colleagues, who are mainly non-engineers, will use/update it, so using scripts should be minimal, and using non-standard libraries is discouraged.
+
+There are important boundary rules:
+* There is a single MCP server (gateway) running on a different machine (proxy.mhaas-dev.mobalab.net), proxying requests to other MCP servers.
+* MCP tools can read/write files in /shared on the proxy machine, but can't access files on this machine.
+* You (AI agent) can access files on this machine, but can't directly access files in /shared: Use the filesystem tools instead.
